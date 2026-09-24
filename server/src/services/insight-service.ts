@@ -13,7 +13,7 @@ export class InsightService {
       orderBy: { timestamp: 'desc' },
     });
 
-    return records.map((r) => ({
+    return records.map((r: any) => ({
       id: r.id,
       category: r.category as InsightCategory,
       headline: r.headline,

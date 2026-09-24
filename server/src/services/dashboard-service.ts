@@ -6,7 +6,7 @@ export class DashboardService {
   static async getOverviewData() {
     const rawMetrics = await db.metric.findMany();
 
-    const kpis: KpiItem[] = rawMetrics.map((m) => {
+    const kpis: KpiItem[] = rawMetrics.map((m: any) => {
       const change = calculateGrowthRate(m.currentVal, m.previousVal);
       let formattedVal = m.currentVal.toLocaleString();
       if (m.type === 'CURRENCY') formattedVal = `$${m.currentVal.toLocaleString()}`;

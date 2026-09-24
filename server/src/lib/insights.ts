@@ -1,4 +1,4 @@
-import type { InsightItem, InsightGeneratorContext, InsightProvider } from '@/types/insights';
+import type { InsightItem, InsightGeneratorContext, InsightProvider } from '../types/insights.js';
 
 export class StatisticalInsightEngine implements InsightProvider {
   async generate(context: InsightGeneratorContext): Promise<InsightItem[]> {
