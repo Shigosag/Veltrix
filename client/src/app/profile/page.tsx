@@ -30,7 +30,7 @@ export default function ProfilePage() {
                   JD
                 </div>
                 <div className="flex-1 min-w-0 mb-1">
-                  <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Jordan Davis</h2>
+                  <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Segun Arulogun Gabriel</h2>
                   <p className="text-xs text-muted-foreground">Head of Analytics · Acme Corporation</p>
                 </div>
               </div>

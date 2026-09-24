@@ -28,7 +28,7 @@ const navItems = [
 ];
 
 const bottomItems = [
-  { href: '/settings', icon: Settings, label: 'Settings' },
+  { href: '/preferences', icon: Settings, label: 'Settings' },
 ];
 
 export function Sidebar({ collapsed, setCollapsed, notifCount = 3 }: SidebarProps) {

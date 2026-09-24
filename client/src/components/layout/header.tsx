@@ -152,7 +152,7 @@ export function Header({ title = 'Command Center', onRefresh, refreshing }: Head
         className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-rose-500 to-indigo-500"
         title="View Profile"
       >
-        JD
+        SA
       </Link>
 
       <button
