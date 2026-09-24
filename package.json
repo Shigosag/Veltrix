@@ -4,8 +4,8 @@
   "workspaces": ["client", "server"],
   "scripts": {
     "install:all": "npm install",
-    "start": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
-    "dev": "npm start",
+    "start": "concurrently \"npm run start --workspace=server\" \"npm run start --workspace=client\"",
+    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
     "build": "npm run build --workspace=server && npm run build --workspace=client",
     "db:push": "npm run db:push --workspace=server",
     "db:seed": "npm run db:seed --workspace=server",
