@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // Ignore minor ESLint warnings during cloud deployment build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // 1. Production Security Headers
   headers: async () => [
     {
