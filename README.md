@@ -23,6 +23,13 @@
 
 ---
 
+## 🌐 Live URL
+
+🟢 **Visit Veltrix:**  
+https://veltrix-y0tru.faable.link/
+
+---
+
 ## 🚀 Key Features
 
 * 📊 **Command Center Dashboard:** Real-time KPI summaries, SVG trend sparklines, and active telemetry anomaly alerts.
