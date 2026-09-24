@@ -1,0 +1,213 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum MetricType {
+  CURRENCY
+  PERCENTAGE
+  COUNT
+  DURATION
+  RATE
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AnomalyStatus {
+  ACTIVE
+  INVESTIGATING
+  RESOLVED
+}
+
+enum DatasetStatus {
+  LIVE
+  READY
+  PROCESSING
+  ARCHIVED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  passwordHash  String
+  name          String
+  role          Role            @default(ANALYST)
+  avatarUrl     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  profile       Profile?
+  dashboards    Dashboard[]
+  datasets      Dataset[]
+  savedFilters  SavedFilter[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+  preferences   UserPreference?
+
+  @@index([email])
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     String   @default("Acme Corp")
+  title       String   @default("Head of Analytics")
+  location    String   @default("San Francisco, CA")
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UserPreference {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme           String   @default("dark")
+  compactDensity  Boolean  @default(false)
+  reducedMotion   Boolean  @default(false)
+  monoFont        String   @default("JetBrains Mono")
+  emailAlerts     Boolean  @default(true)
+  insightDigest   Boolean  @default(true)
+  weeklyReport    Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model Dashboard {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  widgets     Widget[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Widget {
+  id          String    @id @default(cuid())
+  dashboardId String
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  type        String    // KPI, AREA_CHART, BAR_CHART, DONUT, FUNNEL, TABLE
+  title       String
+  layoutConfig Json     // { x, y, w, h }
+  queryConfig Json     // { metric, timeRange, filters }
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Dataset {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  rowsCount   Int             @default(0)
+  sizeBytes   BigInt          @default(0)
+  status      DatasetStatus   @default(READY)
+  tags        String[]
+  data        Json?           // Stores row array in JSONB for flexible schema ingested data
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns     DatasetColumn[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model DatasetColumn {
+  id        String   @id @default(cuid())
+  datasetId String
+  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  name      String
+  dataType  String   // STRING, NUMBER, BOOLEAN, DATE, JSON
+  isMetric  Boolean  @default(false)
+  isTime    Boolean  @default(false)
+
+  @@index([datasetId])
+}
+
+model Metric {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  label       String
+  category    String     // Revenue, Users, Performance, Conversion
+  type        MetricType
+  currentVal  Float
+  previousVal Float
+  targetVal   Float?
+  unit        String?
+  trendData   Float[]
+  updatedAt   DateTime   @updatedAt
+}
+
+model Insight {
+  id          String   @id @default(cuid())
+  category    String   // Revenue, Anomaly, Opportunity, Trend
+  headline    String
+  metricBadge String
+  explanation String   @db.Text
+  actionLabel String   @default("Investigate")
+  actionUrl   String?
+  confidence  Int
+  timestamp   DateTime @default(now())
+  dismissed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@index([dismissed])
+}
+
+model SavedFilter {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filterDef Json
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // anomaly, insight, alert, report, system
+  title     String
+  body      String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  resource  String
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  @@index([userId])
+  @@index([timestamp])
+}
