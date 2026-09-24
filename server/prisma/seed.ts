@@ -24,7 +24,7 @@ async function main() {
   const user = await prisma.user.create({
     data: {
       email: 'demo@veltrix.ai',
-      name: 'Jordan Davis',
+      name: 'Segun Arulogun Gabriel',
       passwordHash,
       role: Role.ADMIN,
       profile: {
