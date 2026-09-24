@@ -20,7 +20,7 @@ export class DatasetService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    return items.map((d) => ({
+    return items.map((d: any) => ({
       id: d.id,
       name: d.name,
       description: d.description,
