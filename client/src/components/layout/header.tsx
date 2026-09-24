@@ -1,10 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Bell, RefreshCw, Zap, Search, LogOut } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import {
+  Sun,
+  Moon,
+  Bell,
+  RefreshCw,
+  Zap,
+  Search,
+  LogOut,
+  Menu,
+  X,
+  LayoutDashboard,
+  TrendingUp,
+  Database,
+  BrainCircuit,
+  Settings,
+  User,
+} from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Drawer } from '@/components/ui/drawer';
 
 interface HeaderProps {
@@ -13,13 +30,24 @@ interface HeaderProps {
   refreshing?: boolean;
 }
 
+const navItems = [
+  { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/analytics', icon: TrendingUp, label: 'Analytics' },
+  { href: '/datasets', icon: Database, label: 'Datasets' },
+  { href: '/insights', icon: BrainCircuit, label: 'AI Insights' },
+  { href: '/preferences', icon: Settings, label: 'Settings' },
+  { href: '/profile', icon: User, label: 'Profile' },
+];
+
 export function Header({ title = 'Command Center', onRefresh, refreshing }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifs, setNotifs] = useState<any[]>([]);
   const [secondsAgo, setSecondsAgo] = useState(0);
 
@@ -58,14 +86,29 @@ export function Header({ title = 'Command Center', onRefresh, refreshing }: Head
         borderBottom: '1px solid var(--border)',
       }}
     >
-      <div className="md:hidden flex items-center gap-2">
+      {/* Mobile Menu Hamburger Button */}
+      <button
+        onClick={() => setMobileMenuOpen(true)}
+        className="md:hidden p-1.5 -ml-1 rounded-lg text-muted-foreground hover:text-foreground"
+        aria-label="Open mobile navigation menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile Logo */}
+      <div
+        className="md:hidden flex items-center gap-2 cursor-pointer"
+        onClick={() => setMobileMenuOpen(true)}
+      >
         <div
           className="w-6 h-6 rounded-md flex items-center justify-center"
           style={{ background: 'linear-gradient(135deg, #f43f5e, #fb7185)' }}
         >
           <Zap className="w-3 h-3 text-white" />
         </div>
-        <span className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>Veltrix</span>
+        <span className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>
+          Veltrix
+        </span>
       </div>
 
       <h1 className="hidden md:block text-base font-semibold" style={{ color: 'var(--foreground)' }}>
@@ -146,7 +189,7 @@ export function Header({ title = 'Command Center', onRefresh, refreshing }: Head
         </button>
       )}
 
-      {/* User Avatar & Profile Navigation */}
+      {/* User Avatar */}
       <Link
         href="/profile"
         className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-rose-500 to-indigo-500"
@@ -189,6 +232,80 @@ export function Header({ title = 'Command Center', onRefresh, refreshing }: Head
           </Link>
         </div>
       </Drawer>
+
+      {/* Mobile Navigation Drawer Portal */}
+      {mounted &&
+        mobileMenuOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[110] md:hidden">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div
+              className="fixed top-0 left-0 bottom-0 w-64 p-5 flex flex-col shadow-2xl z-10"
+              style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--sidebar-border)' }}
+            >
+              <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--sidebar-border)' }}>
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #f43f5e, #fb7185)' }}
+                  >
+                    <Zap className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-base font-bold" style={{ color: 'var(--foreground)' }}>
+                    Veltrix
+                  </span>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
+                {navItems.map(({ href, icon: Icon, label }) => {
+                  const active = pathname === href;
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                      style={{
+                        background: active ? 'var(--rose-subtle)' : 'transparent',
+                        color: active ? '#f43f5e' : 'var(--muted-foreground)',
+                      }}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="pt-4 border-t" style={{ borderColor: 'var(--sidebar-border)' }}>
+                <div className="flex items-center gap-3 p-2 rounded-xl" style={{ background: 'var(--secondary)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-rose-500 to-indigo-500">
+                    SA
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate" style={{ color: 'var(--foreground)' }}>
+                      Segun Arulogun Gabriel
+                    </p>
+                    <p className="text-[10px] truncate" style={{ color: 'var(--muted-foreground)' }}>
+                      demo@veltrix.ai
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </header>
   );
 }
