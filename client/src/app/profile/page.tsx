@@ -27,7 +27,7 @@ export default function ProfilePage() {
             <div className="px-5 pb-5">
               <div className="flex items-end gap-4 -mt-8 mb-4">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold text-white border-4 border-card bg-gradient-to-br from-rose-500 to-indigo-500">
-                  JD
+                  SA
                 </div>
                 <div className="flex-1 min-w-0 mb-1">
                   <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Segun Arulogun Gabriel</h2>
