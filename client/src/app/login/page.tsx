@@ -69,7 +69,7 @@ export default function LoginPage() {
           style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(12px)' }}
         >
           <p className="text-sm leading-relaxed mb-3 text-gray-200">
-            "Veltrix surfaced an anomaly that would have cost us $200K in lost revenue — before our team even noticed the alert."
+            &ldquo;Veltrix surfaced an anomaly that would have cost us $200K in lost revenue — before our team even noticed the alert.&rdquo;
           </p>
           <div className="text-xs font-semibold text-white">Segun Arulogun Gabriel · Head of Data</div>
         </div>
