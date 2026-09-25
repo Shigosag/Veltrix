@@ -9,8 +9,8 @@ import {
   TrendingUp,
   Database,
   BrainCircuit,
-  Bell,
   Settings,
+  User,
   ChevronLeft,
 } from 'lucide-react';
 
@@ -32,7 +32,7 @@ const bottomItems = [
   { href: '/profile', icon: User, label: 'Profile' },
 ];
 
-export function Sidebar({ collapsed, setCollapsed, notifCount = 3 }: SidebarProps) {
+export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -105,6 +105,12 @@ export function Sidebar({ collapsed, setCollapsed, notifCount = 3 }: SidebarProp
                 color: active ? '#f43f5e' : 'var(--muted-foreground)',
               }}
             >
+              {active && (
+                <div
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full"
+                  style={{ background: '#f43f5e' }}
+                />
+              )}
               <Icon className="w-4 h-4 shrink-0" />
               {!collapsed && <span>{label}</span>}
             </Link>
