@@ -5,6 +5,7 @@ export class NotificationService {
     return db.notification.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
