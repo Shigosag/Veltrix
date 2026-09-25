@@ -93,9 +93,9 @@ export default function SettingsPage() {
         <Header title="Settings" />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
-          <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex flex-col gap-6">
             {/* Settings Navigation Tabs */}
-            <nav className="w-full md:w-44 shrink-0 flex md:flex-col gap-1 overflow-x-auto">
+            <nav className="w-full shrink-0 flex flex-wrap gap-1.5 border-b border-border pb-3">
               {tabs.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
