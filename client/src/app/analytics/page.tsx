@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header title="Analytics Explorer" onRefresh={fetchTelemetry} refreshing={loading} />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[1400px] mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
           <FilterBar selectedRange={range} onRangeChange={setRange} onExport={handleExport} />
 
           <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--muted)', width: 'fit-content' }}>

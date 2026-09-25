@@ -49,7 +49,7 @@ export default function DatasetsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header title="Dataset Manager" />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[1400px] mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-48 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
