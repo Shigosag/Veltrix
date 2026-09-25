@@ -30,11 +30,14 @@ interface HeaderProps {
   refreshing?: boolean;
 }
 
-const navItems = [
+const workspaceItems = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/analytics', icon: TrendingUp, label: 'Analytics' },
   { href: '/datasets', icon: Database, label: 'Datasets' },
   { href: '/insights', icon: BrainCircuit, label: 'AI Insights' },
+];
+
+const accountItems = [
   { href: '/preferences', icon: Settings, label: 'Settings' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];
@@ -53,11 +56,12 @@ export function Header({ title = 'Command Center', onRefresh, refreshing }: Head
 
   useEffect(() => {
     setMounted(true);
-    fetch('/api/notifications')
+    fetch('/api/notifications', { credentials: 'include' })
       .then((r) => r.json())
       .then((j) => {
         if (j.success) setNotifs(j.data);
-      });
+      })
+      .catch(() => {});
 
     const interval = setInterval(() => setSecondsAgo((s) => s + 1), 1000);
     return () => clearInterval(interval);
@@ -69,7 +73,7 @@ export function Header({ title = 'Command Center', onRefresh, refreshing }: Head
   };
 
   const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'DELETE' });
+    await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
     router.push('/login');
     router.refresh();
   };
@@ -267,7 +271,32 @@ export function Header({ title = 'Command Center', onRefresh, refreshing }: Head
               </div>
 
               <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
-                {navItems.map(({ href, icon: Icon, label }) => {
+                <p className="text-xs font-semibold tracking-widest uppercase px-3 mb-2 text-muted-foreground">
+                  Workspace
+                </p>
+                {workspaceItems.map(({ href, icon: Icon, label }) => {
+                  const active = pathname === href;
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                      style={{
+                        background: active ? 'var(--rose-subtle)' : 'transparent',
+                        color: active ? '#f43f5e' : 'var(--muted-foreground)',
+                      }}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{label}</span>
+                    </Link>
+                  );
+                })}
+
+                <p className="text-xs font-semibold tracking-widest uppercase px-3 mt-5 mb-2 text-muted-foreground">
+                  Account
+                </p>
+                {accountItems.map(({ href, icon: Icon, label }) => {
                   const active = pathname === href;
                   return (
                     <Link
