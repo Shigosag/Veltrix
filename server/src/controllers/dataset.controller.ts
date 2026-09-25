@@ -34,8 +34,10 @@ export class DatasetController {
   static async toggleArchive(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.user?.userId;
-      const { id } = req.params;
-      if (!userId || !id) return res.status(400).json({ success: false, error: 'Invalid request parameters' });
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      if (!userId || !id || typeof id !== 'string') {
+        return res.status(400).json({ success: false, error: 'Invalid request parameters' });
+      }
 
       const updated = await DatasetService.toggleArchive(userId, id);
       res.json({ success: true, data: updated });
@@ -47,8 +49,10 @@ export class DatasetController {
   static async delete(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.user?.userId;
-      const { id } = req.params;
-      if (!userId || !id) return res.status(400).json({ success: false, error: 'Invalid request parameters' });
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      if (!userId || !id || typeof id !== 'string') {
+        return res.status(400).json({ success: false, error: 'Invalid request parameters' });
+      }
 
       await DatasetService.deleteDataset(userId, id);
       res.json({ success: true, message: 'Dataset removed successfully' });
