@@ -92,7 +92,7 @@ export default function SettingsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header title="Settings" />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[900px] mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Settings Navigation Tabs */}
             <nav className="w-full md:w-44 shrink-0 flex md:flex-col gap-1 overflow-x-auto">
