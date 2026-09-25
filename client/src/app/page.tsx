@@ -21,12 +21,15 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { AlertTriangle } from 'lucide-react';
+import { useToast } from '@/context/toast-context';
 import type { KpiItem, MonthlyRevenuePoint, UserGrowthPoint, ChannelMixPoint, FunnelStagePoint, AnomalyRecord } from '@/types/dashboard';
 import type { InsightItem } from '@/types/insights';
 
 export default function DashboardPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
+
   const [data, setData] = useState<{
     kpis: KpiItem[];
     revenueData: MonthlyRevenuePoint[];
@@ -42,16 +45,17 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       const [dashRes, insRes] = await Promise.all([
-        fetch('/api/dashboard'),
-        fetch('/api/insights'),
+        fetch('/api/dashboard', { credentials: 'include' }),
+        fetch('/api/insights', { credentials: 'include' }),
       ]);
+
       const dashJson = await dashRes.json();
       const insJson = await insRes.json();
 
       if (dashJson.success) setData(dashJson.data);
       if (insJson.success) setInsights(insJson.data);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      showToast('Telemetry Stream Offline', { type: 'error', message: e.message });
     } finally {
       setLoading(false);
     }

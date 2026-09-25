@@ -18,6 +18,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { exportToCsv } from '@/lib/csv';
+import { useToast } from '@/context/toast-context';
 import type { CohortRow, PerformanceMetricPoint } from '@/types/analytics';
 import type { MonthlyRevenuePoint, UserGrowthPoint } from '@/types/dashboard';
 
@@ -30,13 +31,14 @@ export default function AnalyticsPage() {
   const [revenueData, setRevenueData] = useState<MonthlyRevenuePoint[]>([]);
   const [userGrowthData, setUserGrowthData] = useState<UserGrowthPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   const fetchTelemetry = async () => {
     try {
       setLoading(true);
       const [analyticsRes, dashRes] = await Promise.all([
-        fetch('/api/analytics'),
-        fetch('/api/dashboard'),
+        fetch('/api/analytics', { credentials: 'include' }),
+        fetch('/api/dashboard', { credentials: 'include' }),
       ]);
 
       const analyticsJson = await analyticsRes.json();
@@ -50,8 +52,8 @@ export default function AnalyticsPage() {
         setRevenueData(dashJson.data.revenueData);
         setUserGrowthData(dashJson.data.userGrowthData);
       }
-    } catch (e) {
-      console.error('Failed loading telemetry:', e);
+    } catch (e: any) {
+      showToast('Telemetry stream error', { type: 'error', message: e.message });
     } finally {
       setLoading(false);
     }
@@ -62,16 +64,21 @@ export default function AnalyticsPage() {
   }, []);
 
   const handleExport = () => {
-    if (tab === 'trend') {
-      exportToCsv('revenue_trend_export.csv', revenueData as unknown as Record<string, unknown>[]);
-    } else if (tab === 'performance') {
-      exportToCsv('system_performance_export.csv', performance as unknown as Record<string, unknown>[]);
-    } else {
-      const flattened = cohorts.map((c) => ({
-        cohort: c.cohort,
-        ...c.values.reduce((acc, v, idx) => ({ ...acc, [`M${idx}`]: v ?? '' }), {}),
-      }));
-      exportToCsv('retention_cohorts_export.csv', flattened);
+    try {
+      if (tab === 'trend') {
+        exportToCsv('revenue_trend_export.csv', revenueData as unknown as Record<string, unknown>[]);
+      } else if (tab === 'performance') {
+        exportToCsv('system_performance_export.csv', performance as unknown as Record<string, unknown>[]);
+      } else {
+        const flattened = cohorts.map((c) => ({
+          cohort: c.cohort,
+          ...c.values.reduce((acc, v, idx) => ({ ...acc, [`M${idx}`]: v ?? '' }), {}),
+        }));
+        exportToCsv('retention_cohorts_export.csv', flattened);
+      }
+      showToast('CSV Exported', { type: 'success', message: `Exported ${tab} dataset successfully.` });
+    } catch (err: any) {
+      showToast('Export Failed', { type: 'error', message: err.message });
     }
   };
 
@@ -101,7 +108,7 @@ export default function AnalyticsPage() {
             ))}
           </div>
 
-          {/* TREND TAB (Visual Source of Truth) */}
+          {/* TREND TAB */}
           {tab === 'trend' && (
             <div className="space-y-4">
               <div className="rounded-2xl p-5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
