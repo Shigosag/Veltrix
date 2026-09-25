@@ -30,7 +30,7 @@ https://veltrix-y0tru.faable.link/
 
 ---
 
-![Veltrix Command Center](Screenshots/veltrix_01_dashboard.png)
+![Veltrix Command Center](screenshots/veltrix_01_dashboard.png)
 
 ## 🚀 Key Features
 
