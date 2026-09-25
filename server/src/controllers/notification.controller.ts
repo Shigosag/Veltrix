@@ -21,8 +21,10 @@ export class NotificationController {
 
   static async delete(req: AuthenticatedRequest, res: Response) {
     const userId = req.user?.userId;
-    const { id } = req.params;
-    if (!userId || !id) return res.status(400).json({ success: false, error: 'Invalid parameters' });
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!userId || !id || typeof id !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid parameters' });
+    }
 
     await NotificationService.dismissNotification(id, userId);
     res.json({ success: true, message: 'Notification dismissed' });
