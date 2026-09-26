@@ -5,4 +5,5 @@ import { requireAuth } from '../middleware/auth.middleware.js';
 export const insightRoutes = Router();
 
 insightRoutes.get('/', requireAuth, InsightController.list);
+insightRoutes.post('/analyze', requireAuth, InsightController.analyze);
 insightRoutes.patch('/:id/dismiss', requireAuth, InsightController.dismiss);
