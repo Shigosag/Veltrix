@@ -1,4 +1,4 @@
-import { PrismaClient, Role, MetricType, DatasetStatus } from '@prisma/client';
+import { PrismaClient, Role, MetricType, DatasetStatus, Severity, AnomalyStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -6,10 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting Veltrix database seed...');
 
-  // Clean existing tables safely
+  // Safe table purge
   await prisma.activityLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.insight.deleteMany();
+  await prisma.anomaly.deleteMany();
   await prisma.metric.deleteMany();
   await prisma.datasetColumn.deleteMany();
   await prisma.dataset.deleteMany();
@@ -19,7 +20,7 @@ async function main() {
   await prisma.profile.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create default demo user
+  // Create default admin user
   const passwordHash = await bcrypt.hash('veltrix2026', 10);
   const user = await prisma.user.create({
     data: {
@@ -32,7 +33,7 @@ async function main() {
           company: 'Acme Corporation',
           title: 'Head of Analytics',
           location: 'San Francisco, CA',
-          bio: 'Data architect specializing in modern high-throughput streaming analytics and predictive modeling.',
+          bio: 'Data architect specializing in modern high-throughput streaming analytics, telemetry pipelines, and predictive modeling.',
         },
       },
       preferences: {
@@ -51,7 +52,7 @@ async function main() {
 
   console.log(`👤 Seeded User: ${user.email} (Password: veltrix2026)`);
 
-  // Seed Primary Metrics
+  // Primary Telemetry Metrics
   await prisma.metric.createMany({
     data: [
       {
@@ -101,7 +102,53 @@ async function main() {
     ],
   });
 
-  // Seed AI Insights
+  // Active Telemetry Anomalies
+  await prisma.anomaly.createMany({
+    data: [
+      {
+        time: '09:14',
+        metric: 'API Latency',
+        value: '847ms',
+        expected: '< 120ms',
+        severity: Severity.CRITICAL,
+        status: AnomalyStatus.ACTIVE,
+        zScore: 3.42,
+        userId: user.id,
+      },
+      {
+        time: '11:32',
+        metric: 'Error Rate',
+        value: '3.8%',
+        expected: '< 0.5%',
+        severity: Severity.HIGH,
+        status: AnomalyStatus.ACTIVE,
+        zScore: 2.76,
+        userId: user.id,
+      },
+      {
+        time: '14:07',
+        metric: 'Drop-off Rate',
+        value: '+142%',
+        expected: 'baseline',
+        severity: Severity.MEDIUM,
+        status: AnomalyStatus.INVESTIGATING,
+        zScore: 2.15,
+        userId: user.id,
+      },
+      {
+        time: '16:55',
+        metric: 'Revenue/Session',
+        value: '-34%',
+        expected: 'baseline',
+        severity: Severity.MEDIUM,
+        status: AnomalyStatus.RESOLVED,
+        zScore: -2.08,
+        userId: user.id,
+      },
+    ],
+  });
+
+  // Statistical AI Insights
   await prisma.insight.createMany({
     data: [
       {
@@ -111,7 +158,7 @@ async function main() {
         explanation: 'Users acquired through in-app referral links in November 2025 are reaching their first paid subscription 3.1 days faster than the trailing 90-day cohort average. Accelerated onboarding completion is the dominant driver.',
         confidence: 94,
         actionLabel: 'View cohort',
-        actionUrl: '/analytics?tab=cohorts',
+        actionUrl: '/analytics',
       },
       {
         category: 'Anomaly',
@@ -120,7 +167,7 @@ async function main() {
         explanation: 'A statistically significant 18% decline in iOS daily active users began 4 hours after the iOS 18.2 rollout. Desktop DAU remained stable. Likely related to a breaking change in background sync permissions.',
         confidence: 87,
         actionLabel: 'Investigate',
-        actionUrl: '/analytics?tab=performance',
+        actionUrl: '/analytics',
       },
       {
         category: 'Opportunity',
@@ -143,16 +190,22 @@ async function main() {
     ],
   });
 
-  // Seed Datasets
+  // Seed Datasets matching Figma
   const ds1 = await prisma.dataset.create({
     data: {
       userId: user.id,
       name: 'User Events — Production',
-      description: 'Raw high-frequency telemetry events from all production web and mobile clients.',
+      description: 'Raw high-frequency telemetry events from production web and mobile clients.',
       rowsCount: 128400000,
-      sizeBytes: BigInt(18200000000),
+      sizeBytes: BigInt(18200000000), // 18.2 GB
       status: DatasetStatus.LIVE,
       tags: ['events', 'prod'],
+      data: [
+        { event_id: 'ev_001', user_id: 'usr_882', event_name: 'dashboard_load', latency_ms: 48, status: '200' },
+        { event_id: 'ev_002', user_id: 'usr_883', event_name: 'export_csv', latency_ms: 112, status: '200' },
+        { event_id: 'ev_003', user_id: 'usr_884', event_name: 'query_execute', latency_ms: 82, status: '200' },
+        { event_id: 'ev_004', user_id: 'usr_885', event_name: 'auth_verify', latency_ms: 36, status: '200' },
+      ],
       columns: {
         create: [
           { name: 'timestamp', dataType: 'DATE', isTime: true },
@@ -168,17 +221,21 @@ async function main() {
     data: {
       userId: user.id,
       name: 'Revenue Transactions Q4',
-      description: 'Normalized ledger of all successful Stripe subscription renewals and upgrades.',
+      description: 'Ledger of all verified Stripe subscription renewals and enterprise upgrades.',
       rowsCount: 4200000,
-      sizeBytes: BigInt(892000000),
+      sizeBytes: BigInt(892000000), // 892 MB
       status: DatasetStatus.READY,
       tags: ['revenue', 'finance'],
+      data: [
+        { transaction_id: 'tx_991', plan: 'Enterprise', amount_usd: 12000, currency: 'USD' },
+        { transaction_id: 'tx_992', plan: 'Pro', amount_usd: 480, currency: 'USD' },
+        { transaction_id: 'tx_993', plan: 'Team', amount_usd: 1200, currency: 'USD' },
+      ],
       columns: {
         create: [
           { name: 'transaction_id', dataType: 'STRING' },
           { name: 'amount_usd', dataType: 'NUMBER', isMetric: true },
           { name: 'plan', dataType: 'STRING' },
-          { name: 'date', dataType: 'DATE', isTime: true },
         ],
       },
     },
@@ -190,9 +247,45 @@ async function main() {
       name: 'ML Feature Store v3',
       description: 'Precomputed user propensity scores and behavioral embeddings for recommendation.',
       rowsCount: 62100000,
-      sizeBytes: BigInt(7400000000),
+      sizeBytes: BigInt(7400000000), // 7.4 GB
       status: DatasetStatus.READY,
       tags: ['ml', 'features'],
+    },
+  });
+
+  await prisma.dataset.create({
+    data: {
+      userId: user.id,
+      name: 'Customer 360 Profiles',
+      description: 'Aggregated firmographic profiles and account health metrics.',
+      rowsCount: 1800000,
+      sizeBytes: BigInt(2100000000), // 2.1 GB
+      status: DatasetStatus.READY,
+      tags: ['crm', 'profiles'],
+    },
+  });
+
+  await prisma.dataset.create({
+    data: {
+      userId: user.id,
+      name: 'Clickstream Archive 2023',
+      description: 'Cold storage clickstream telemetry logs for historical cohort baselines.',
+      rowsCount: 890000000,
+      sizeBytes: BigInt(142000000000), // 142 GB
+      status: DatasetStatus.ARCHIVED,
+      tags: ['clickstream', 'archive'],
+    },
+  });
+
+  await prisma.dataset.create({
+    data: {
+      userId: user.id,
+      name: 'A/B Experiment Results',
+      description: 'Live multi-variant tests across new onboarding flow iterations.',
+      rowsCount: 18200000,
+      sizeBytes: BigInt(1800000000), // 1.8 GB
+      status: DatasetStatus.PROCESSING,
+      tags: ['experiments'],
     },
   });
 
