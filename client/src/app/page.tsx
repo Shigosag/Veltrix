@@ -65,6 +65,16 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
+  const handleAnomalyStatusChange = (id: string, nextStatus: 'active' | 'investigating' | 'resolved') => {
+    if (!data) return;
+    setData({
+      ...data,
+      anomalyData: data.anomalyData.map((a) => (a.id === id ? { ...a, status: nextStatus } : a)),
+    });
+  };
+
+  const activeAnomaliesCount = data?.anomalyData.filter((a) => a.status === 'active').length ?? 0;
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--background)' }}>
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
@@ -202,11 +212,16 @@ export default function DashboardPage() {
 
           {/* Active Anomalies Alert Section */}
           <div className="rounded-2xl p-5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Active Telemetry Anomalies</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Active Telemetry Anomalies</h3>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-500">
+                  {activeAnomaliesCount} Active
+                </span>
+              </div>
             </div>
-            <DataTable anomalies={data?.anomalyData || []} />
+            <DataTable anomalies={data?.anomalyData || []} onStatusChange={handleAnomalyStatusChange} />
           </div>
         </main>
       </div>
