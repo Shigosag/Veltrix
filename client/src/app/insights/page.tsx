@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
-import { BrainCircuit, Filter, Sparkles, ChevronDown, ChevronUp, ArrowUpRight, Check } from 'lucide-react';
+import { BrainCircuit, Filter, Sparkles, ChevronDown, ChevronUp, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { useToast } from '@/context/toast-context';
 import type { InsightItem } from '@/types/insights';
 
@@ -12,6 +12,7 @@ export default function InsightsPage() {
   const [insights, setInsights] = useState<InsightItem[]>([]);
   const [filter, setFilter] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
   const { showToast } = useToast();
 
   const loadInsights = () => {
@@ -26,6 +27,28 @@ export default function InsightsPage() {
   useEffect(() => {
     loadInsights();
   }, []);
+
+  const handleRunScan = async () => {
+    try {
+      setScanning(true);
+      const res = await fetch('/api/insights/analyze', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+
+      setInsights(json.data);
+      showToast('Diagnostic Scan Complete', {
+        type: 'success',
+        message: 'Calculated statistical Z-scores and updated active insights.',
+      });
+    } catch (err: any) {
+      showToast('Scan Failed', { type: 'error', message: err.message });
+    } finally {
+      setScanning(false);
+    }
+  };
 
   const handleDismiss = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,7 +66,7 @@ export default function InsightsPage() {
     }
   };
 
-  const filtered = filter ? insights.filter((i) => i.category === filter) : insights;
+  const filtered = filter ? insights.filter((i) => i.category.toLowerCase() === filter.toLowerCase()) : insights;
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--background)' }}>
@@ -51,7 +74,7 @@ export default function InsightsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header title="AI Insights" />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full max-w-[1000px] mx-auto">
           {/* Header Banner */}
           <div
             className="rounded-2xl p-5 flex items-center gap-4 border"
@@ -64,12 +87,20 @@ export default function InsightsPage() {
               <BrainCircuit className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>Statistical Diagnostic Engine</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>
+                Statistical Diagnostic Engine
+              </h2>
               <p className="text-xs text-muted-foreground">{insights.length} active findings identified across live telemetry</p>
             </div>
-            <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-              <Sparkles className="w-3 h-3" />
-              Engine v2.1 Active
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={handleRunScan}
+                disabled={scanning}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
+              >
+                <RefreshCw className={`w-3 h-3 ${scanning ? 'animate-spin' : ''}`} />
+                {scanning ? 'Scanning...' : 'Run Statistical Scan'}
+              </button>
             </div>
           </div>
 
@@ -116,7 +147,9 @@ export default function InsightsPage() {
                         </span>
                         <span className="text-[10px] text-muted-foreground">{item.timestamp}</span>
                       </div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{item.headline}</p>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                        {item.headline}
+                      </p>
                       <p className="text-xs font-semibold mt-1 font-mono-data text-rose-500">{item.metricBadge}</p>
                     </div>
 
@@ -124,11 +157,27 @@ export default function InsightsPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full bg-emerald-500 rounded-full"
+                            className={`h-full rounded-full ${
+                              item.confidence >= 90
+                                ? 'bg-emerald-500'
+                                : item.confidence >= 75
+                                ? 'bg-amber-500'
+                                : 'bg-rose-500'
+                            }`}
                             style={{ width: `${item.confidence}%` }}
                           />
                         </div>
-                        <span className="text-xs font-mono-data font-semibold text-emerald-500">{item.confidence}%</span>
+                        <span
+                          className={`text-xs font-mono-data font-semibold ${
+                            item.confidence >= 90
+                              ? 'text-emerald-500'
+                              : item.confidence >= 75
+                              ? 'text-amber-500'
+                              : 'text-rose-500'
+                          }`}
+                        >
+                          {item.confidence}%
+                        </span>
                       </div>
                       <div className="text-muted-foreground">
                         {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -141,7 +190,12 @@ export default function InsightsPage() {
                       <p className="text-xs leading-relaxed text-muted-foreground mb-4">{item.explanation}</p>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => showToast('Action Executed', { type: 'info', message: `Navigating to ${item.actionLabel} context.` })}
+                          onClick={() =>
+                            showToast('Action Context Launched', {
+                              type: 'info',
+                              message: `Executing ${item.actionLabel}...`,
+                            })
+                          }
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20"
                         >
                           {item.actionLabel} <ArrowUpRight className="w-3 h-3" />
