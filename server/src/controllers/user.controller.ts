@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { UserService } from '../services/user-service.js';
+import { profileUpdateSchema, preferencesUpdateSchema } from '../lib/validation.js';
 import { AuthenticatedRequest } from '../middleware/auth.middleware.js';
 
 export class UserController {
@@ -20,7 +21,8 @@ export class UserController {
       const userId = req.user?.userId;
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-      const updated = await UserService.updateProfile(userId, req.body);
+      const validated = profileUpdateSchema.parse(req.body);
+      const updated = await UserService.updateProfile(userId, validated);
       res.json({ success: true, data: updated });
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });
@@ -32,7 +34,8 @@ export class UserController {
       const userId = req.user?.userId;
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-      const updated = await UserService.updatePreferences(userId, req.body);
+      const validated = preferencesUpdateSchema.parse(req.body);
+      const updated = await UserService.updatePreferences(userId, validated);
       res.json({ success: true, data: updated });
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });
