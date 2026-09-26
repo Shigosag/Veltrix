@@ -28,12 +28,14 @@ export default function LoginPage() {
         throw new Error(data.error || 'Authentication failed. Please verify credentials.');
       }
 
-      showToast('Welcome back to Veltrix', { type: 'success', message: 'Signed in successfully. Launching Command Center...' });
+      showToast('Welcome back to Veltrix', {
+        type: 'success',
+        message: 'Signed in successfully. Launching Command Center...',
+      });
 
-      // Navigate to root command center
       setTimeout(() => {
         window.location.href = '/';
-      }, 500);
+      }, 400);
     } catch (err: any) {
       showToast('Sign in Failed', { type: 'error', message: err.message });
       setLoading(false);
@@ -124,7 +126,9 @@ export default function LoginPage() {
             >
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Veltrix</span>
+            <span className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>
+              Veltrix
+            </span>
           </div>
 
           <h2 className="text-3xl font-bold mb-1" style={{ color: 'var(--foreground)', letterSpacing: '-0.02em' }}>
