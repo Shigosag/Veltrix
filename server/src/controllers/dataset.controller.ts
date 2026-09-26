@@ -11,8 +11,8 @@ export class DatasetController {
 
       const search = typeof req.query.search === 'string' ? req.query.search : undefined;
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const data = await DatasetService.listDatasets(userId, search, status);
-      res.json({ success: true, data });
+      const result = await DatasetService.listDatasets(userId, search, status);
+      res.json({ success: true, data: result.items, stats: result.stats });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
@@ -24,7 +24,7 @@ export class DatasetController {
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
       const body = datasetCreateSchema.parse(req.body);
-      const record = await DatasetService.createDataset(userId, body.name, body.jsonData, body.tags);
+      const record = await DatasetService.createDataset(userId, body.name, body.jsonData as any, body.tags);
       res.status(201).json({ success: true, data: record });
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });

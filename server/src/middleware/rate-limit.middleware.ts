@@ -8,8 +8,19 @@ interface ClientTracker {
 
 const ipBuckets = new Map<string, ClientTracker>();
 
+// Periodic garbage collection every 5 minutes to prevent memory leaks from client IP scans
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, tracker] of ipBuckets.entries()) {
+    if (now > tracker.resetTime) {
+      ipBuckets.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
 export function rateLimiter(req: Request, res: Response, next: NextFunction) {
-  const ip = req.ip || req.socket.remoteAddress || 'unknown-client';
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.ip || req.socket.remoteAddress || '127.0.0.1';
   const now = Date.now();
 
   const tracker = ipBuckets.get(ip);
@@ -23,7 +34,8 @@ export function rateLimiter(req: Request, res: Response, next: NextFunction) {
   }
 
   if (tracker.count >= RATE_LIMIT_MAX_REQUESTS) {
-    res.setHeader('Retry-After', Math.ceil((tracker.resetTime - now) / 1000));
+    const retryAfter = Math.max(1, Math.ceil((tracker.resetTime - now) / 1000));
+    res.setHeader('Retry-After', retryAfter);
     return res.status(429).json({
       success: false,
       error: 'Rate limit exceeded. Please throttle your requests.',

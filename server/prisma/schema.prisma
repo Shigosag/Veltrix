@@ -50,7 +50,7 @@ model User {
   avatarUrl     String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  
+
   profile       Profile?
   dashboards    Dashboard[]
   datasets      Dataset[]
@@ -58,6 +58,7 @@ model User {
   notifications Notification[]
   activityLogs  ActivityLog[]
   preferences   UserPreference?
+  anomalies     Anomaly[]
 
   @@index([email])
 }
@@ -66,10 +67,10 @@ model Profile {
   id          String   @id @default(cuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company     String   @default("Acme Corp")
+  company     String   @default("Acme Corporation")
   title       String   @default("Head of Analytics")
   location    String   @default("San Francisco, CA")
-  bio         String?
+  bio         String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -122,7 +123,7 @@ model Dataset {
   sizeBytes   BigInt          @default(0)
   status      DatasetStatus   @default(READY)
   tags        String[]
-  data        Json?           // Stores row array in JSONB for flexible schema ingested data
+  data        Json?           // JSONB storage for ingested rows
   userId      String
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   columns     DatasetColumn[]
@@ -130,6 +131,7 @@ model Dataset {
   updatedAt   DateTime        @updatedAt
 
   @@index([userId])
+  @@index([status])
 }
 
 model DatasetColumn {
@@ -156,6 +158,24 @@ model Metric {
   unit        String?
   trendData   Float[]
   updatedAt   DateTime   @updatedAt
+}
+
+model Anomaly {
+  id          String        @id @default(cuid())
+  metric      String
+  time        String
+  value       String
+  expected    String
+  severity    Severity      @default(MEDIUM)
+  status      AnomalyStatus @default(ACTIVE)
+  zScore      Float         @default(0.0)
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+  @@index([severity])
 }
 
 model Insight {

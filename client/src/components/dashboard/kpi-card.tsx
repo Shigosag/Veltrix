@@ -51,7 +51,9 @@ export function KpiCard({ label, value, change, trend, color }: KpiCardProps) {
       }}
     >
       <div className="flex items-start justify-between">
-        <p className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>{label}</p>
+        <p className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>
+          {label}
+        </p>
         <Sparkline data={trend} color={color} />
       </div>
 
@@ -72,9 +74,12 @@ export function KpiCard({ label, value, change, trend, color }: KpiCardProps) {
             className="text-xs font-semibold font-mono-data"
             style={{ color: isPositive ? '#10b981' : '#ef4444' }}
           >
-            {isPositive ? '+' : ''}{change}%
+            {isPositive ? '+' : ''}
+            {change}%
           </span>
-          <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>vs last month</span>
+          <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+            vs last month
+          </span>
         </div>
       </div>
     </div>

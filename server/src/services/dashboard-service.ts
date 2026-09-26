@@ -4,7 +4,10 @@ import type { KpiItem, MonthlyRevenuePoint, UserGrowthPoint, ChannelMixPoint, Fu
 
 export class DashboardService {
   static async getOverviewData() {
-    const rawMetrics = await db.metric.findMany();
+    const [rawMetrics, dbAnomalies] = await Promise.all([
+      db.metric.findMany({ orderBy: { category: 'asc' } }),
+      db.anomaly.findMany({ orderBy: { createdAt: 'desc' }, take: 10 }),
+    ]);
 
     const kpis: KpiItem[] = rawMetrics.map((m: any) => {
       const change = calculateGrowthRate(m.currentVal, m.previousVal);
@@ -19,9 +22,9 @@ export class DashboardService {
         value: formattedVal,
         rawValue: m.currentVal,
         change,
-        trend: m.trendData.length ? m.trendData : [70, 75, 78, 85, 90],
+        trend: m.trendData && m.trendData.length ? m.trendData : [80, 85, 90, 95, 100],
         unit: m.unit || undefined,
-        color: m.name.includes('revenue') ? '#f43f5e' : m.name.includes('users') ? '#818cf8' : '#10b981',
+        color: m.name.includes('revenue') ? '#f43f5e' : m.name.includes('dau') ? '#818cf8' : m.name.includes('duration') ? '#34d399' : '#fbbf24',
       };
     });
 
@@ -67,12 +70,15 @@ export class DashboardService {
       { stage: 'Enterprise', value: 847, pct: 1.03 },
     ];
 
-    const anomalyData: AnomalyRecord[] = [
-      { id: '1', time: '09:14', metric: 'API Latency', value: '847ms', expected: '< 120ms', severity: 'critical', status: 'active' },
-      { id: '2', time: '11:32', metric: 'Error Rate', value: '3.8%', expected: '< 0.5%', severity: 'high', status: 'active' },
-      { id: '3', time: '14:07', metric: 'Drop-off Rate', value: '+142%', expected: 'baseline', severity: 'medium', status: 'investigating' },
-      { id: '4', time: '16:55', metric: 'Revenue/Session', value: '-34%', expected: 'baseline', severity: 'medium', status: 'resolved' },
-    ];
+    const anomalyData: AnomalyRecord[] = dbAnomalies.map((a: any) => ({
+      id: a.id,
+      time: a.time,
+      metric: a.metric,
+      value: a.value,
+      expected: a.expected,
+      severity: a.severity.toLowerCase() as 'critical' | 'high' | 'medium' | 'low',
+      status: a.status.toLowerCase() as 'active' | 'investigating' | 'resolved',
+    }));
 
     return {
       kpis,
@@ -81,6 +87,36 @@ export class DashboardService {
       channelData,
       conversionData,
       anomalyData,
+    };
+  }
+
+  static async updateAnomalyStatus(id: string, status: 'active' | 'investigating' | 'resolved', userId?: string) {
+    const updated = await db.anomaly.update({
+      where: { id },
+      data: {
+        status: status.toUpperCase() as any,
+        userId: userId || undefined,
+      },
+    });
+
+    if (userId) {
+      await db.activityLog.create({
+        data: {
+          userId,
+          action: `Toggled anomaly status to ${status}`,
+          resource: updated.metric,
+        },
+      });
+    }
+
+    return {
+      id: updated.id,
+      time: updated.time,
+      metric: updated.metric,
+      value: updated.value,
+      expected: updated.expected,
+      severity: updated.severity.toLowerCase(),
+      status: updated.status.toLowerCase(),
     };
   }
 }

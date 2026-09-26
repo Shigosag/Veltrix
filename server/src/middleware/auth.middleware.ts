@@ -21,3 +21,12 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
   req.user = payload;
   next();
 }
+
+export function requireRole(...roles: string[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, error: 'Access denied: insufficient workspace permissions.' });
+    }
+    next();
+  };
+}

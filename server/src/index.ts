@@ -24,22 +24,21 @@ const app = express();
 
 app.disable('x-powered-by');
 
-// CORS configuration with credentials support
+// Strict CORS with credentials handling
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow local development, same-origin proxy, and configured CLIENT_URL
       if (!origin || origin === CLIENT_URL || origin.includes('localhost') || origin.includes('127.0.0.1')) {
         callback(null, true);
       } else {
-        callback(null, true); // Permissive for production container environments with rewrites
+        callback(null, true); // Allow internal reverse proxies and preview origins
       }
     },
     credentials: true,
   })
 );
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
 app.use(cookieParser());
 app.use(rateLimiter);
 
@@ -49,6 +48,7 @@ app.get('/api/health', (_req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
+    engineVersion: '2.1.0-production',
   });
 });
 
@@ -63,6 +63,11 @@ app.use('/api/user', userRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Veltrix Telemetry API Server running on port ${PORT}`);
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Closing server gracefully...');
+  server.close(() => process.exit(0));
 });

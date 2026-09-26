@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
+import { Modal } from '@/components/ui/modal';
 import { useTheme } from 'next-themes';
-import { Palette, Bell, Shield, Users, Plug, Save } from 'lucide-react';
+import { Palette, Bell, Shield, Users, Plug, Save, UserPlus } from 'lucide-react';
 import { useToast } from '@/context/toast-context';
 
 const tabs = [
@@ -47,6 +48,22 @@ export default function SettingsPage() {
     weeklyReport: false,
   });
 
+  const [integrations, setIntegrations] = useState([
+    { name: 'Slack', description: 'Stream anomaly triggers into incident channels', connected: true },
+    { name: 'PostgreSQL Direct', description: 'Stream external data warehouse connections', connected: true },
+    { name: 'dbt Lineage', description: 'Sync transformation dependency models', connected: false },
+    { name: 'Jira Software', description: 'Create bug tickets directly from critical anomalies', connected: false },
+  ]);
+
+  const [teamMembers, setTeamMembers] = useState([
+    { name: 'Segun Arulogun Gabriel', email: 'demo@veltrix.ai', role: 'Owner' },
+    { name: 'Priya Sharma', email: 'priya@meridian.ai', role: 'Analyst' },
+    { name: 'Alex Rivera', email: 'alex@acme.corp', role: 'Viewer' },
+  ]);
+
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('Analyst');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -79,12 +96,21 @@ export default function SettingsPage() {
     }
   };
 
-  const integrations = [
-    { name: 'Slack', description: 'Stream telemetry anomaly triggers into incident channels', connected: true },
-    { name: 'PostgreSQL Direct', description: 'Stream external data warehouse connections', connected: true },
-    { name: 'dbt Lineage', description: 'Sync transformation dependency models', connected: false },
-    { name: 'Jira Software', description: 'Create bug tickets directly from critical anomalies', connected: false },
-  ];
+  const handleInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setTeamMembers((prev) => [...prev, { name: inviteEmail.split('@')[0], email: inviteEmail, role: inviteRole }]);
+    showToast('Invitation Sent', { type: 'success', message: `Invite dispatched to ${inviteEmail}` });
+    setInviteEmail('');
+    setInviteModalOpen(false);
+  };
+
+  const toggleIntegration = (name: string) => {
+    setIntegrations((prev) =>
+      prev.map((i) => (i.name === name ? { ...i, connected: !i.connected } : i))
+    );
+    showToast('Integration Updated', { type: 'info', message: `${name} state updated.` });
+  };
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--background)' }}>
@@ -169,6 +195,14 @@ export default function SettingsPage() {
                     </div>
                     <SettingToggle checked={prefs.insightDigest} onChange={(v) => setPrefs({ ...prefs, insightDigest: v })} />
                   </div>
+
+                  <div className="flex items-center justify-between py-3 border-b border-border">
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">Weekly Executive Report</p>
+                      <p className="text-[11px] text-muted-foreground">Summary compilation dispatched Monday at 09:00 UTC</p>
+                    </div>
+                    <SettingToggle checked={prefs.weeklyReport} onChange={(v) => setPrefs({ ...prefs, weeklyReport: v })} />
+                  </div>
                 </div>
               )}
 
@@ -209,25 +243,46 @@ export default function SettingsPage() {
                         <p className="text-xs font-semibold text-foreground">{item.name}</p>
                         <p className="text-[11px] text-muted-foreground">{item.description}</p>
                       </div>
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${item.connected ? 'text-emerald-500 bg-emerald-500/10' : 'text-muted-foreground bg-muted'}`}>
-                        {item.connected ? 'Connected' : 'Offline'}
-                      </span>
+                      <button
+                        onClick={() => toggleIntegration(item.name)}
+                        className={`text-[10px] font-bold uppercase px-3 py-1 rounded-md transition-all ${
+                          item.connected
+                            ? 'text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
+                            : 'text-rose-500 bg-rose-500/10 hover:bg-rose-500/20'
+                        }`}
+                      >
+                        {item.connected ? 'Connected' : 'Connect'}
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
 
               {activeTab === 'team' && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-foreground">Workspace Members</h3>
-                  <div className="p-3 rounded-xl bg-secondary border border-border flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold text-foreground">Segun Arulogun Gabriel</p>
-                      <p className="text-[11px] text-muted-foreground">demo@veltrix.ai · Workspace Administrator</p>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md">
-                      Owner
-                    </span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-foreground">Workspace Members</h3>
+                    <button
+                      onClick={() => setInviteModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-all"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      Invite Member
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {teamMembers.map((member) => (
+                      <div key={member.email} className="p-3 rounded-xl bg-secondary border border-border flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">{member.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{member.email}</p>
+                        </div>
+                        <span className="text-[10px] font-bold uppercase text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md">
+                          {member.role}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -246,6 +301,45 @@ export default function SettingsPage() {
           </div>
         </main>
       </div>
+
+      {/* Invite Member Modal */}
+      <Modal isOpen={inviteModalOpen} onClose={() => setInviteModalOpen(false)} title="Invite Workspace Member">
+        <form onSubmit={handleInvite} className="space-y-4 text-xs">
+          <div>
+            <label className="block mb-1 font-semibold text-foreground">Email Address</label>
+            <input
+              type="email"
+              required
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="colleague@company.com"
+              className="w-full px-3 py-2 rounded-xl outline-none bg-secondary text-foreground border border-border"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 font-semibold text-foreground">Workspace Role</label>
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl outline-none bg-secondary text-foreground border border-border"
+            >
+              <option>Analyst</option>
+              <option>Admin</option>
+              <option>Viewer</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={() => setInviteModalOpen(false)} className="px-4 py-2 rounded-xl text-muted-foreground hover:bg-muted">
+              Cancel
+            </button>
+            <button type="submit" className="px-4 py-2 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600">
+              Send Invitation
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

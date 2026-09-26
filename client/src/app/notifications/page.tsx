@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
-import { Bell, AlertTriangle, BrainCircuit, Database, Check, Trash2 } from 'lucide-react';
+import { Bell, AlertTriangle, BrainCircuit, Database, Check, Trash2, Filter } from 'lucide-react';
 import { useToast } from '@/context/toast-context';
 
 interface NotificationItem {
@@ -18,6 +18,7 @@ interface NotificationItem {
 export default function NotificationsPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'anomaly'>('all');
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
 
@@ -58,6 +59,12 @@ export default function NotificationsPage() {
     }
   };
 
+  const filtered = items.filter((n) => {
+    if (filter === 'unread') return !n.read;
+    if (filter === 'anomaly') return n.type === 'anomaly';
+    return true;
+  });
+
   const unreadCount = items.filter((n) => !n.read).length;
 
   return (
@@ -69,22 +76,42 @@ export default function NotificationsPage() {
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[750px] mx-auto w-full">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>Alerts & Activity</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>
+                Alerts & Activity
+              </h2>
               <p className="text-xs text-muted-foreground">{unreadCount} unread · {items.length} total events</p>
             </div>
-            {unreadCount > 0 && (
+
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all"
+                >
+                  <Check className="w-3 h-3" />
+                  Mark all read
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Filters */}
+          <div className="flex gap-1.5">
+            {(['all', 'unread', 'anomaly'] as const).map((f) => (
               <button
-                onClick={markAllRead}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all"
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-all ${
+                  filter === f ? 'bg-rose-500 text-white' : 'bg-card text-muted-foreground border border-border'
+                }`}
               >
-                <Check className="w-3 h-3" />
-                Mark all read
+                {f}
               </button>
-            )}
+            ))}
           </div>
 
           <div className="space-y-2.5">
-            {items.map((notif) => (
+            {filtered.map((notif) => (
               <div
                 key={notif.id}
                 className="flex items-start gap-3 p-4 rounded-2xl transition-all border group"
@@ -105,7 +132,9 @@ export default function NotificationsPage() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{notif.title}</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                      {notif.title}
+                    </p>
                     <div className="flex items-center gap-2">
                       {!notif.read && <div className="w-2 h-2 rounded-full bg-rose-500" />}
                       <button
@@ -122,7 +151,7 @@ export default function NotificationsPage() {
               </div>
             ))}
 
-            {items.length === 0 && (
+            {filtered.length === 0 && (
               <div className="py-16 text-center text-muted-foreground">
                 <Bell className="w-10 h-10 mx-auto mb-3 opacity-40" />
                 <p className="text-sm font-medium">All caught up!</p>

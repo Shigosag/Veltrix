@@ -3,7 +3,7 @@ import { formatCompactNumber } from '../lib/utils.js';
 import type { DatasetItem, DatasetStatus } from '../types/dataset.js';
 
 export class DatasetService {
-  static async listDatasets(userId: string, search?: string, status?: string): Promise<DatasetItem[]> {
+  static async listDatasets(userId: string, search?: string, status?: string): Promise<{ items: DatasetItem[]; stats: { totalDatasets: number; totalRows: string; storageUsed: string; liveConnections: number } }> {
     const where: any = { userId };
 
     if (status && status !== 'all') {
@@ -24,7 +24,22 @@ export class DatasetService {
       include: { columns: true },
     });
 
-    return items.map((d: any) => {
+    // Compute global summary telemetry across all user datasets
+    const allUserDatasets = await db.dataset.findMany({
+      where: { userId },
+      select: { rowsCount: true, sizeBytes: true, status: true },
+    });
+
+    const totalRowsCount = allUserDatasets.reduce((sum, d) => sum + d.rowsCount, 0);
+    const totalSizeBytes = allUserDatasets.reduce((sum, d) => sum + Number(d.sizeBytes), 0);
+    const liveCount = allUserDatasets.filter((d) => d.status === 'LIVE').length;
+
+    const formattedStorage =
+      totalSizeBytes >= 1024 * 1024 * 1024
+        ? `${(totalSizeBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+        : `${(totalSizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+
+    const mappedItems: DatasetItem[] = items.map((d: any) => {
       const sizeBytesNum = Number(d.sizeBytes);
       const sizeFormatted =
         sizeBytesNum >= 1024 * 1024 * 1024
@@ -47,15 +62,24 @@ export class DatasetService {
           isMetric: c.isMetric,
           isTime: c.isTime,
         })),
-        dataPreview: Array.isArray(d.data) ? d.data.slice(0, 5) : [],
+        dataPreview: Array.isArray(d.data) ? d.data.slice(0, 10) : [],
       };
     });
+
+    return {
+      items: mappedItems,
+      stats: {
+        totalDatasets: allUserDatasets.length,
+        totalRows: formatCompactNumber(totalRowsCount),
+        storageUsed: formattedStorage,
+        liveConnections: liveCount,
+      },
+    };
   }
 
   static async createDataset(userId: string, name: string, rows: Record<string, unknown>[], tags: string[] = []) {
     const approximateSize = Buffer.byteLength(JSON.stringify(rows));
 
-    // Profile schema columns dynamically from rows
     const firstRow = rows[0] || {};
     const columnsToCreate = Object.keys(firstRow).map((key) => {
       const val = firstRow[key];
@@ -88,6 +112,15 @@ export class DatasetService {
       },
     });
 
+    await db.activityLog.create({
+      data: {
+        userId,
+        action: 'Ingested telemetry dataset',
+        resource: name,
+        metadata: { rows: rows.length, sizeBytes: approximateSize },
+      },
+    });
+
     return {
       ...created,
       sizeBytes: Number(created.sizeBytes),
@@ -95,38 +128,38 @@ export class DatasetService {
   }
 
   static async toggleArchive(userId: string, datasetId: string) {
-    const dataset = await db.dataset.findFirst({
-      where: { id: datasetId, userId },
+    return db.$transaction(async (tx) => {
+      const dataset = await tx.dataset.findFirst({
+        where: { id: datasetId, userId },
+      });
+
+      if (!dataset) throw new Error('Dataset not found or access denied');
+
+      const nextStatus = dataset.status === 'ARCHIVED' ? 'READY' : 'ARCHIVED';
+
+      const updated = await tx.dataset.update({
+        where: { id: datasetId },
+        data: { status: nextStatus },
+      });
+
+      return {
+        ...updated,
+        sizeBytes: Number(updated.sizeBytes),
+      };
     });
-
-    if (!dataset) {
-      throw new Error('Dataset not found or access denied');
-    }
-
-    const nextStatus = dataset.status === 'ARCHIVED' ? 'READY' : 'ARCHIVED';
-
-    const updated = await db.dataset.update({
-      where: { id: datasetId },
-      data: { status: nextStatus },
-    });
-
-    return {
-      ...updated,
-      sizeBytes: Number(updated.sizeBytes),
-    };
   }
 
   static async deleteDataset(userId: string, datasetId: string) {
-    const dataset = await db.dataset.findFirst({
-      where: { id: datasetId, userId },
+    return db.$transaction(async (tx) => {
+      const dataset = await tx.dataset.findFirst({
+        where: { id: datasetId, userId },
+      });
+
+      if (!dataset) throw new Error('Dataset not found or access denied');
+
+      await tx.datasetColumn.deleteMany({ where: { datasetId } });
+      await tx.dataset.delete({ where: { id: datasetId } });
+      return { success: true };
     });
-
-    if (!dataset) {
-      throw new Error('Dataset not found or access denied');
-    }
-
-    await db.datasetColumn.deleteMany({ where: { datasetId } });
-    await db.dataset.delete({ where: { id: datasetId } });
-    return { success: true };
   }
 }

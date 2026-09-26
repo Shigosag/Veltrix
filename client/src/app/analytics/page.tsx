@@ -22,9 +22,19 @@ import { useToast } from '@/context/toast-context';
 import type { CohortRow, PerformanceMetricPoint } from '@/types/analytics';
 import type { MonthlyRevenuePoint, UserGrowthPoint } from '@/types/dashboard';
 
+const AVAILABLE_METRICS = [
+  { name: 'Revenue', color: '#f43f5e' },
+  { name: 'DAU', color: '#818cf8' },
+  { name: 'Sessions', color: '#34d399' },
+  { name: 'Conversions', color: '#fbbf24' },
+  { name: 'Latency', color: '#60a5fa' },
+  { name: 'Errors', color: '#f97316' },
+];
+
 export default function AnalyticsPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [range, setRange] = useState('30D');
+  const [activeMetrics, setActiveMetrics] = useState<string[]>(['Revenue', 'DAU']);
   const [tab, setTab] = useState<'trend' | 'performance' | 'cohorts'>('trend');
   const [cohorts, setCohorts] = useState<CohortRow[]>([]);
   const [performance, setPerformance] = useState<PerformanceMetricPoint[]>([]);
@@ -63,6 +73,10 @@ export default function AnalyticsPage() {
     fetchTelemetry();
   }, []);
 
+  const toggleMetric = (m: string) => {
+    setActiveMetrics((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
+  };
+
   const handleExport = () => {
     try {
       if (tab === 'trend') {
@@ -90,6 +104,28 @@ export default function AnalyticsPage() {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
           <FilterBar selectedRange={range} onRangeChange={setRange} onExport={handleExport} />
+
+          {/* Metric Toggle Filters matching Figma */}
+          <div className="flex flex-wrap gap-2">
+            {AVAILABLE_METRICS.map((m) => {
+              const active = activeMetrics.includes(m.name);
+              return (
+                <button
+                  key={m.name}
+                  onClick={() => toggleMetric(m.name)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    background: active ? `${m.color}18` : 'var(--card)',
+                    color: active ? m.color : 'var(--muted-foreground)',
+                    border: active ? `1px solid ${m.color}40` : '1px solid var(--border)',
+                  }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: active ? m.color : 'var(--muted-foreground)' }} />
+                  {m.name}
+                </button>
+              );
+            })}
+          </div>
 
           <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--muted)', width: 'fit-content' }}>
             {(['trend', 'performance', 'cohorts'] as const).map((t) => (
@@ -135,7 +171,9 @@ export default function AnalyticsPage() {
                     <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} width={48} />
                     <Tooltip contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px' }} />
                     <ReferenceLine y={250000} stroke="#818cf8" strokeDasharray="4 4" strokeWidth={1} />
-                    <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#f43f5e" strokeWidth={2} fill="url(#aGrad)" />
+                    {activeMetrics.includes('Revenue') && (
+                      <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#f43f5e" strokeWidth={2} fill="url(#aGrad)" />
+                    )}
                     <Line type="monotone" dataKey="target" name="Target" stroke="#818cf8" strokeWidth={1.5} dot={false} strokeDasharray="6 3" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -150,7 +188,9 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="week" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} width={36} />
                     <Tooltip contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px' }} />
-                    <Line type="monotone" dataKey="dau" name="DAU" stroke="#f43f5e" strokeWidth={2} dot={false} />
+                    {activeMetrics.includes('DAU') && (
+                      <Line type="monotone" dataKey="dau" name="DAU" stroke="#f43f5e" strokeWidth={2} dot={false} />
+                    )}
                     <Line type="monotone" dataKey="new" name="New users" stroke="#10b981" strokeWidth={2} dot={false} />
                     <Line type="monotone" dataKey="mau" name="MAU" stroke="#818cf8" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
                   </LineChart>
