@@ -51,7 +51,7 @@ export default function InsightsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header title="AI Insights" />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[1000px] mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
           {/* Header Banner */}
           <div
             className="rounded-2xl p-5 flex items-center gap-4 border"

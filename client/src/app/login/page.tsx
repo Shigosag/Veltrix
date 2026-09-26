@@ -104,7 +104,7 @@ export default function LoginPage() {
           </p>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-rose-500 to-indigo-500">
-              SG
+              SA
             </div>
             <div>
               <div className="text-xs font-semibold text-white">Segun Arulogun Gabriel</div>

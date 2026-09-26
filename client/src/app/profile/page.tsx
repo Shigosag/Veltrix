@@ -68,7 +68,7 @@ export default function ProfilePage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header title="User Profile" />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[800px] mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 w-full">
           <div className="rounded-2xl overflow-hidden border border-border" style={{ background: 'var(--card)' }}>
             <div className="h-28 relative bg-gradient-to-r from-rose-950/60 via-purple-950/50 to-slate-900 border-b border-border" />
             <div className="px-5 pb-5">
