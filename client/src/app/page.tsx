@@ -150,8 +150,8 @@ export default function DashboardPage() {
         <Header title="Command Center" onRefresh={fetchData} refreshing={loading} />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 w-full">
-          {/* Top 4 KPI Cards */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* 2x2 on mobile & tablet, 4 across on desktop */}
+          <section className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             {data.kpis.map((kpi) => (
               <KpiCard
                 key={kpi.label}
